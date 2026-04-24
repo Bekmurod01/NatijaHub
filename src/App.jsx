@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, createContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { supabase, getSupabaseClient } from "./supabaseClient";
+import { supabase, getSupabaseClient, getSupabaseConfigError } from "./supabaseClient";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const C = {
@@ -2888,6 +2888,7 @@ function AdminApplications() {
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
+  const configError = getSupabaseConfigError();
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [page, setPage] = useState("home");
@@ -2936,6 +2937,11 @@ export default function App() {
   };
 
   useEffect(()=>{
+    if (configError) {
+      setAuthLoading(false);
+      return undefined;
+    }
+
     // Parol tiklash havolasini tekshirish
     const hash = window.location.hash;
     if (hash.includes("type=recovery") || hash.includes("access_token")) {
@@ -2978,6 +2984,49 @@ export default function App() {
   const showToast = (message, type="success") => {
     setToast({ id: Date.now(), message, type });
   };
+
+  if (configError) return (
+    <div style={{
+      minHeight:"100vh",
+      display:"flex",
+      alignItems:"center",
+      justifyContent:"center",
+      padding:"24px",
+      background:"linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%)",
+      fontFamily:"'DM Sans','Segoe UI',sans-serif",
+      color:"#0f172a"
+    }}>
+      <div style={{
+        width:"100%",
+        maxWidth:620,
+        background:"#fff",
+        border:"1px solid rgba(37,99,235,0.14)",
+        borderRadius:24,
+        padding:"28px 24px",
+        boxShadow:"0 24px 60px rgba(15,23,42,0.10)"
+      }}>
+        <div style={{ fontSize:28, fontWeight:800, marginBottom:8 }}>NatijaHub setup required</div>
+        <div style={{ fontSize:14, lineHeight:1.6, color:"#475569", marginBottom:16 }}>
+          This deployment is missing valid Supabase environment variables, so the app cannot start yet.
+        </div>
+        <div style={{
+          background:"#eff6ff",
+          border:"1px solid rgba(37,99,235,0.18)",
+          color:"#1d4ed8",
+          borderRadius:16,
+          padding:"14px 16px",
+          fontSize:14,
+          fontWeight:700,
+          marginBottom:16
+        }}>
+          {configError}
+        </div>
+        <div style={{ fontSize:13, color:"#64748b", lineHeight:1.7 }}>
+          Add <code>REACT_APP_SUPABASE_URL</code> and <code>REACT_APP_SUPABASE_ANON_KEY</code> in Vercel Project Settings, then redeploy.
+        </div>
+      </div>
+    </div>
+  );
 
   // Loading
   if (authLoading) return (

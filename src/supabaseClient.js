@@ -44,3 +44,7 @@ export function getSupabaseClient() {
 
   return client;
 }
+
+export function getSupabaseConfigError() {
+  return configError;
+}
