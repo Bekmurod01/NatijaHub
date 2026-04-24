@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, createContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { supabase } from "./supabaseClient";
+import { supabase, getSupabaseClient } from "./supabaseClient";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const C = {
@@ -1083,6 +1083,7 @@ function AuthScreen({ onAuth, initialMode="login", onBack }) {
     setLoading(true); setError("");
     try {
       if (mode === "login") {
+        const supabase = getSupabaseClient();
         const { data, error } = await supabase.auth.signInWithPassword({ email:form.email, password:form.password });
         if (error) throw error;
         onAuth(data.user);
@@ -1091,6 +1092,7 @@ function AuthScreen({ onAuth, initialMode="login", onBack }) {
         if (role === "company" && !form.company_name.trim()) throw new Error("Kompaniya nomini kiriting");
         if (role === "student" && !form.university.trim()) throw new Error("Universitetni kiriting");
 
+        const supabase = getSupabaseClient();
         const { data, error } = await supabase.auth.signUp({
           email: form.email, password: form.password,
           options: { data: { full_name:form.full_name, role, university:form.university, company_name:form.company_name } }
@@ -1122,6 +1124,7 @@ function AuthScreen({ onAuth, initialMode="login", onBack }) {
     if (!resetEmail.trim()) { setError("Emailni kiriting"); return; }
     setLoading(true); setError("");
     try {
+      const supabase = getSupabaseClient();
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
         redirectTo: `${window.location.origin}/#type=recovery`,
       });
@@ -2701,6 +2704,7 @@ function AdminUsers() {
     (async()=>{
       setLoading(true);
       try {
+        const supabase = getSupabaseClient();
         const { data } = await supabase.from("profiles").select("*").order("created_at",{ascending:false});
         setUsers(data||[]);
       } catch {}
@@ -2762,6 +2766,7 @@ function AdminInternships() {
   const load = async () => {
     setLoading(true);
     try {
+      const supabase = getSupabaseClient();
       const { data } = await supabase.from("internships").select("*").order("created_at",{ascending:false});
       setItems(data?.length ? data : MOCK_INTERNSHIPS);
     } catch { setItems(MOCK_INTERNSHIPS); }
@@ -2771,12 +2776,14 @@ function AdminInternships() {
   useEffect(()=>{ load(); },[]);
 
   const toggle = async (id, cur) => {
+    const supabase = getSupabaseClient();
     await supabase.from("internships").update({ is_active:!cur }).eq("id",id);
     setItems(prev=>prev.map(i=>i.id===id?{...i,is_active:!cur}:i));
   };
 
   const remove = async (id) => {
     if(!window.confirm("O'chirishni tasdiqlaysizmi?")) return;
+    const supabase = getSupabaseClient();
     const { error } = await supabase.from("internships").delete().eq("id",id);
     if (!error) setItems(prev=>prev.filter(i=>i.id!==id));
     else alert("O'chirishda xato: " + error.message);
@@ -2818,6 +2825,7 @@ function AdminApplications() {
     (async()=>{
       setLoading(true);
       try {
+        const supabase = getSupabaseClient();
         const { data } = await supabase.from("applications")
           .select("*, profiles(full_name,university,email), internships(role,company_name)")
           .order("created_at",{ascending:false});
@@ -2828,6 +2836,7 @@ function AdminApplications() {
   },[]);
 
   const updateStatus = async (id, status) => {
+    const supabase = getSupabaseClient();
     const { error } = await supabase.from("applications").update({ status }).eq("id",id);
     if (!error) setApps(prev=>prev.map(a=>a.id===id?{...a,status}:a));
   };
@@ -2914,6 +2923,7 @@ export default function App() {
   // loadProfile — email ni auth.user dan olish (profiles da bo'lmasligi mumkin)
   const loadProfile = async (uid, userEmail) => {
     try {
+      const supabase = getSupabaseClient();
       const { data } = await supabase.from("profiles").select("*").eq("id",uid).single();
       const email = userEmail || data?.email || "";
       const merged = data ? { ...data, email } : { id:uid, email, role:"student" };
@@ -2935,6 +2945,7 @@ export default function App() {
     }
 
     // Joriy sessiya
+    const supabase = getSupabaseClient();
     supabase.auth.getSession().then(({ data:{ session } })=>{
       if (session?.user) { setUser(session.user); loadProfile(session.user.id, session.user.email); }
       setAuthLoading(false);
@@ -2958,6 +2969,7 @@ export default function App() {
   },[]);
 
   const logout = async () => {
+    const supabase = getSupabaseClient();
     await supabase.auth.signOut();
     setUser(null); setProfile(null); setPage("home"); setShowAuth(false);
     window.location.hash = "";
