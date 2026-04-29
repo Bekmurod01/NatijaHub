@@ -1105,11 +1105,22 @@ function AuthScreen({ onAuth, initialMode="login", onBack }) {
             company_name: role === "company" ? form.company_name : undefined,
           })
         });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.message || "Registration failed");
+        let data;
+        try {
+          data = await res.json();
+        } catch (e) {
+          data = {};
         }
-        await res.json(); // Ignore unused user
+        if (!res.ok) {
+          // Log error for debugging
+          console.error("Registration error:", data, res.status);
+          let msg = data.message || data.error || "Registration failed";
+          // Show validation errors if present
+          if (data.errors && Array.isArray(data.errors)) {
+            msg += "\n" + data.errors.map(e => e.msg || e).join("\n");
+          }
+          throw new Error(msg);
+        }
         // Optionally, auto-login after registration
         setMode("login");
         setError("Ro'yxatdan muvaffaqiyatli o'tdingiz. Endi tizimga kiring.");
