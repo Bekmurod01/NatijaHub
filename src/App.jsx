@@ -1092,29 +1092,27 @@ function AuthScreen({ onAuth, initialMode="login", onBack }) {
         if (role === "company" && !form.company_name.trim()) throw new Error("Kompaniya nomini kiriting");
         if (role === "student" && !form.university.trim()) throw new Error("Universitetni kiriting");
 
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase.auth.signUp({
-          email: form.email, password: form.password,
-          options: { data: { full_name:form.full_name, role, university:form.university, company_name:form.company_name } }
-        });
-        if (error) throw error;
-
-        if (data.user) {
-          // profiles table ga yozish — RLS policy bo'lishi kerak
-          const { error: pErr } = await supabase.from("profiles").insert({
-            id: data.user.id,
+        // Use backend API for registration
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             email: form.email,
-            full_name: form.full_name,
+            password: form.password,
             role,
-            university: role === "student" ? form.university : null,
-            company_name: role === "company" ? form.company_name : null,
-          });
-          // 23505 = duplicate (trigger orqali allaqachon yaratilgan) — xato emas
-          if (pErr && pErr.code !== "23505") {
-            console.warn("Profile insert:", pErr.message);
-          }
-          onAuth(data.user);
+            full_name: form.full_name,
+            university: role === "student" ? form.university : undefined,
+            company_name: role === "company" ? form.company_name : undefined,
+          })
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.message || "Registration failed");
         }
+        const user = await res.json();
+        // Optionally, auto-login after registration
+        setMode("login");
+        setError("Ro'yxatdan muvaffaqiyatli o'tdingiz. Endi tizimga kiring.");
       }
     } catch (err) { setError(err.message); }
     setLoading(false);
