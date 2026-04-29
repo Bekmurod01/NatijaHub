@@ -14,20 +14,41 @@ const Register = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
+    setSuccess("");
     try {
       await register(email, password, role);
       setSuccess('Registration successful!');
-      setError('');
     } catch (err) {
-      setError('Registration failed');
-      setSuccess('');
+      // Try to extract a specific error message
+      let msg = 'Registration failed';
+      if (err?.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (typeof err?.message === 'string') {
+        msg = err.message;
+      }
+      // Detect rate limit error
+      if (/rate limit/i.test(msg) || /security purposes/i.test(msg)) {
+        setCooldown(60); // 60 seconds cooldown
+        msg = 'Too many requests. Please wait a minute before trying again.';
+      }
+      setError(msg);
     }
     setLoading(false);
   };
+
+  // Cooldown timer effect
+  React.useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
 
   return (
     <div style={{ minHeight: '100vh', background: theme.colors.background, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -51,9 +72,11 @@ const Register = () => {
             <option value="company">Company</option>
             <option value="admin">Admin</option>
           </select>
-          <Btn type="submit" disabled={loading}>{loading ? <Spinner size={18} /> : 'Register'}</Btn>
+          <Btn type="submit" disabled={loading || cooldown > 0}>
+            {loading ? <Spinner size={18} /> : cooldown > 0 ? `Wait ${cooldown}s` : 'Register'}
+          </Btn>
         </form>
-        {error && <div style={{ color: theme.colors.danger, marginTop: 8 }}>{error}</div>}
+        {error && <div style={{ color: theme.colors.danger, marginTop: 8, whiteSpace: 'pre-line' }}>{error}</div>}
         {success && <div style={{ color: theme.colors.success, marginTop: 8 }}>{success}</div>}
       </Card>
     </div>
