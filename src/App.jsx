@@ -1109,7 +1109,7 @@ function AuthScreen({ onAuth, initialMode="login", onBack }) {
           const data = await res.json().catch(() => ({}));
           throw new Error(data.message || "Registration failed");
         }
-        const user = await res.json();
+        await res.json(); // Ignore unused user
         // Optionally, auto-login after registration
         setMode("login");
         setError("Ro'yxatdan muvaffaqiyatli o'tdingiz. Endi tizimga kiring.");
