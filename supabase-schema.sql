@@ -6,6 +6,7 @@
 -- 1. PROFILES (talaba va tadbirkor profillari)
 create table profiles (
   id uuid references auth.users on delete cascade primary key,
+  email text,
   full_name text,
   role text check (role in ('student', 'company')) default 'student',
   university text,
@@ -95,11 +96,14 @@ create policy "Tajriba ko'rish" on experiences for select using (auth.uid() = st
 create or replace function handle_new_user()
 returns trigger as $$
 begin
-  insert into profiles (id, full_name, role)
+  insert into profiles (id, email, full_name, role, university, company_name)
   values (
     new.id,
+    new.email,
     new.raw_user_meta_data->>'full_name',
-    coalesce(new.raw_user_meta_data->>'role', 'student')
+    coalesce(new.raw_user_meta_data->>'role', 'student'),
+    new.raw_user_meta_data->>'university',
+    new.raw_user_meta_data->>'company_name'
   );
   return new;
 end;

@@ -1092,27 +1092,23 @@ function AuthScreen({ onAuth, initialMode="login", onBack }) {
         if (role === "company" && !form.company_name.trim()) throw new Error("Kompaniya nomini kiriting");
         if (role === "student" && !form.university.trim()) throw new Error("Universitetni kiriting");
 
-        // Use backend API for registration
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: form.email,
-            password: form.password,
-            role,
-            full_name: form.full_name,
-            university: role === "student" ? form.university : undefined,
-            company_name: role === "company" ? form.company_name : undefined,
-          })
+        const supabase = getSupabaseClient();
+        const { error } = await supabase.auth.signUp({
+          email: form.email,
+          password: form.password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: {
+              full_name: form.full_name.trim(),
+              role,
+              university: role === "student" ? form.university.trim() : null,
+              company_name: role === "company" ? form.company_name.trim() : null,
+            },
+          },
         });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.message || "Registration failed");
-        }
-        const user = await res.json();
-        // Optionally, auto-login after registration
+        if (error) throw error;
         setMode("login");
-        setError("Ro'yxatdan muvaffaqiyatli o'tdingiz. Endi tizimga kiring.");
+        setError("Ro'yxatdan muvaffaqiyatli o'tdingiz. Emailingizni tasdiqlang, keyin tizimga kiring.");
       }
     } catch (err) { setError(err.message); }
     setLoading(false);
