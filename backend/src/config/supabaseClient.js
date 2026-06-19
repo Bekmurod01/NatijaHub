@@ -7,7 +7,12 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 function isValidSupabaseConfig(url, key) {
 	return (
 		typeof url === 'string' && url.startsWith('http') &&
-		typeof key === 'string' && key.length > 10 && !key.includes('your_key') && !url.includes('your_url')
+		typeof key === 'string' &&
+		key.length > 10 &&
+		!url.includes('your-project-ref') &&
+		!url.includes('your_url') &&
+		!key.includes('your-supabase') &&
+		!key.includes('your_key')
 	);
 }
 

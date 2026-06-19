@@ -8,8 +8,16 @@ function getConfigError() {
     return "Missing REACT_APP_SUPABASE_URL. Add it to your .env file.";
   }
 
+  if (supabaseUrl.includes("your-project-ref")) {
+    return "REACT_APP_SUPABASE_URL still contains the placeholder project ref.";
+  }
+
   if (!supabaseAnonKey) {
     return "Missing REACT_APP_SUPABASE_ANON_KEY. Add it to your .env file.";
+  }
+
+  if (supabaseAnonKey.includes("your-supabase") || supabaseAnonKey.includes("your_key")) {
+    return "REACT_APP_SUPABASE_ANON_KEY still contains the placeholder key.";
   }
 
   try {

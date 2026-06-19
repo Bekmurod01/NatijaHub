@@ -5,9 +5,13 @@ const bcrypt = require('bcryptjs');
 
 async function register({ email, password, role }) {
   const hashedPassword = await bcrypt.hash(password, 10);
-  const { data, error } = await supabase.from('users').insert([{ email, password: hashedPassword, role }]);
+  const { data, error } = await supabase
+    .from('users')
+    .insert([{ email, password: hashedPassword, role }])
+    .select()
+    .single();
   if (error) throw error;
-  return data[0];
+  return data;
 }
 
 async function login(email, password) {

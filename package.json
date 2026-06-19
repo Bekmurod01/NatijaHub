@@ -14,6 +14,7 @@
     "build": "react-scripts build",
     "lint": "eslint ./frontend/src --ext .js,.jsx"
   },
+  "proxy": "http://localhost:5000",
   "browserslist": {
     "production": [
       ">0.2%",
