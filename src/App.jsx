@@ -984,7 +984,12 @@ function ResetPasswordScreen({ onDone }) {
       if (error) throw error;
       setDone(true);
       setTimeout(() => onDone(), 2500);
-    } catch (err) { setError(err.message); }
+    } catch (err) {
+      const message = err?.message === "Failed to fetch"
+        ? "Cannot connect to Supabase. Check REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in Vercel, then redeploy."
+        : err.message;
+      setError(message);
+    }
     setLoading(false);
   };
 
